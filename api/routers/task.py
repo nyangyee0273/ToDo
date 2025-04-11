@@ -32,21 +32,22 @@ async def list_task():
 # 새로운 할 일 추가 기능 (POST 방식)
 # 예: 사용자가 할 일을 작성해서 보내면 서버에 저장하도록 준비
 # ------------------------------------------------------------
-@router.post("/task/{task_id}", response_model=task_schema.TaskCreateResponse)
+@router.post("/tasks", response_model=task_schema.TaskCreateResponse)
 # task_body: 클라이언트가 보낸 할 일 데이터 (title만 있음)
 # TaskCreateResponse: 저장된 결과로 id를 포함해 응답
 async def create_task(task_body: task_schema.TaskCreate):
-    return task_schema.TaskCreateResponse(id=1, **task_body.dict())
-    # DB가 없으므로 임시로 id=1을 부여하고, 받은 데이터를 그대로 반환
+    return task_schema.TaskCreateResponse(id=1, **task_body.model_dump())
+    # pydantic v2 기준: task_body.dict() -> task_body.model_dump() 로 변경
 
 
 # ------------------------------------------------------------
 # 할 일 수정 기능 (PUT 방식)
 # 예: /tasks/3 -> 번호가 3인 할 일의 내용을 바꾼다.
 # ------------------------------------------------------------
-@router.put("/task/{task_id}")
-async def update_task():
-    pass
+@router.put("/task/{task_id}", response_model=task_schema.TaskCreateResponse)
+async def update_task(task_id: int, task_body: task_schema.TaskCreate):
+    return task_schema.TaskCreateResponse(id=task_id, **task_body.model_dump())
+    # pydantic v2 기준: task_body.dict() -> task_body.model_dump() 로 변경
 
 
 # ------------------------------------------------------------
@@ -54,5 +55,5 @@ async def update_task():
 # 예: /tasks/3 -> 번호가 3인 할 일의 내용을 바꾼다.
 # ------------------------------------------------------------
 @router.delete("/task/{task_id}")
-async def delete_task():
-    pass
+async def delete_task(task_id: int):
+    return
