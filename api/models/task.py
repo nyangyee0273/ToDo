@@ -20,6 +20,7 @@ from sqlalchemy.orm import relationship
 # * 테이블 간의 관계(1:1, 1:N 등)를 정의할 때 사용하는 도구
 # * 예: Task와 Done이 서로 연결되도록 설정할 수 있음
 
+
 from api.db import Base  # SQLAlchemy에서 사용하는 모델의 기반 클래스
 
 
@@ -58,6 +59,6 @@ class Done(Base):
     # * 1:1 관계 유지: dones.id = task.id 인 상태
     # * 완료된 작업만 이 테이블에 기록됨
 
-    Task = relationship("Task", back_populates="done")
+    task = relationship("Task", back_populates="done")
     # * 연결된 Task 객체를 참조할 수 있음
     # * task: Done -> Task 방향 참조
