@@ -46,10 +46,11 @@ router = APIRouter()
 @router.get("/tasks", response_model=list[task_schema.Task])
 # - response_model: 응답의 데이터 모양을 지정함
 # - 여기서는 Task 모델을 여러 개 담은 리스트를 반환한다고 지정함
-async def list_task():
-    return [task_schema.Task(id=1, title="첫 번 째 ToDo 작업", done=False)]
-    # * Task 모델 형식에 맞는 임시 데이터를 리스트 형태로 만들어 반환함
-    # * 실제 DB 연동 시에는 DB에서 데이터를 꺼내서 여기에 넣을 예정
+async def list_task(db: AsyncSession = Depends(get_db)):
+    return await task_crud.get_tasks_with_done(db)
+    # * 실제 DB에서 모든 할 일을 가져오고, 각 할 일이 완료되었는지도 함께 반환함
+    # * 완료 여부는 'Done 테이블에 해당 할 일이 있는지'로 판단
+    #   (외부 조인이라는 방식으로 처리됨 - 모든 할 일을 보여주되, 완료된 것도 함께 표시함)
 
 
 # ------------------------------------------------------------
