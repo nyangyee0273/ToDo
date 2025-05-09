@@ -40,11 +40,12 @@ router = APIRouter()
 
 # ------------------------------------------------------------
 # [1] 할 일 목록 조회 (GET 요청)
-# - 클라이언트가 /tasks 조소로 요청하면 전체 할 일 목록을 반환한다.
-# - 아직 DB는 연결하지 않았기 때문에 임시 데이터만 보여준다.
+# - 클라이언트가 /tasks 주소로 요청하면 전체 할 일 목록을 반환한다.
+# - 각 할 일이 '완료되었는지 여부'도 함께 포함된다.
+#   (Done 테이블에 완료 기록이 있는지를 기준으로 판단함)
 # ------------------------------------------------------------
 @router.get("/tasks", response_model=list[task_schema.Task])
-# - response_model: 응답의 데이터 모양을 지정함
+# - response_model: 응답의 데이터 형태을 지정함
 # - 여기서는 Task 모델을 여러 개 담은 리스트를 반환한다고 지정함
 async def list_task(db: AsyncSession = Depends(get_db)):
     # * async: 이 함수는 '비동기 함수'임
@@ -62,26 +63,37 @@ async def list_task(db: AsyncSession = Depends(get_db)):
 
 # ------------------------------------------------------------
 # [2] 할 일 추가 (POST 요청)
-# - 클라이언트가 JSON 형식으로 보낸 데이터(title)를 받아
-#   새로운 할 일을 생성하는 기능 (예: {"title": "책 읽기"})
-# - 이번에는 예시 데이터가 아니라, 실제 DB에 저장하는 구조로 구현함
+# - 사용자가 할 일 하나를 JSON으로 보내면 서버가 저장해줍니다.
+#   예: {"title": "책 읽기"}
+# - 이 함수는 POST /tasks 주소로 요청이 왔을 때 실행됩니다.
 # ------------------------------------------------------------
 @router.post("/tasks", response_model=task_schema.TaskCreateResponse)
-# - task_body: 사용자가 보낸 데이터 요청 본문
-# - TaskCreate: 사용자가 보낸 데이터(title만 포함됨)
-# - TaskCreateResponse: 응답할 때 포함할 데이터(id 포함)
-# - db: FastAPI가 get_db() 함수를 통해 자동으로 주입하는 DB 세션 객체
+# 위 줄은 "이 API는 POST 방식으로 /tasks 주소를 처리한다"는 의미입니다.
+# - response_model은 FastAPI가 자동으로 응답 형식을 만들어주도록 하는 옵션입니다.
+#   즉, 이 API가 반환하는 응답이 TaskCreateResponse 형식임을 알려주는 것입니다.
+
+
+# 아래는 실제 실행될 함수입니다.
+# - task_body: 사용자가 보낸 JSON 데이터 -> {"title": "책 읽기"}처럼 생김
+#              이 데이터는 task_schema.TaskCreate라는 데이터 형식으로 검사됩니다.
+# - db: 데이터베이스와 연결된 세션입니다.
+#       Depends(get_db)를 통해 FastAPI가 자동으로 db 연결을 준비해줍니다.
 async def create_task(
     task_body: task_schema.TaskCreate, db: AsyncSession = Depends(get_db)
 ):
+    # ---------------------------------------------------------
+    # 실제로 할 일을 DB에 저장하는 부분입니다.
+    # - task_crud.create_task 함수에 db 세션과 요청 데이터를 전달합니다.
+    # - 결과로 저장된 Task 객체를 다시 반환합니다 (id 포함).
+    # ---------------------------------------------------------
     return await task_crud.create_task(db, task_body)
-    # DB에 새 Task를 저장하고, id가 포함된 응답 데이터를 반환함
 
 
 # ------------------------------------------------------------
 # [3] 할 일 수정 (PUT 요청)
 # - 경로에 포함된 번호(task_id)에 해당하는 할 일을 수정함
 # - 클라이언트가 수정할 내용을 JSON으로 보내면 title을 바꿔주는 역할
+# - 실제 DB에서 해당 Task가 존재하는지 확인한 뒤 수정 진행
 # ------------------------------------------------------------
 @router.put("/task/{task_id}", response_model=task_schema.TaskCreateResponse)
 # - task_id: URL 경로에 포함된 숫자 (수정 대상 할 일 번호)
