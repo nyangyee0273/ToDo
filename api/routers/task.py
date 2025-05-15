@@ -79,7 +79,8 @@ async def list_task(db: AsyncSession = Depends(get_db)):
 # - db: 데이터베이스와 연결된 세션입니다.
 #       Depends(get_db)를 통해 FastAPI가 자동으로 db 연결을 준비해줍니다.
 async def create_task(
-    task_body: task_schema.TaskCreate, db: AsyncSession = Depends(get_db)
+    task_body: task_schema.TaskCreate,  # 요청 데이터 (제목 하나만 포함됨)
+    db: AsyncSession = Depends(get_db),  # DB 연결 세션 (FastAPI가 자동으로 준비)
 ):
     # ---------------------------------------------------------
     # 실제로 할 일을 DB에 저장하는 부분입니다.
@@ -95,7 +96,7 @@ async def create_task(
 # - 클라이언트가 수정할 내용을 JSON으로 보내면 title을 바꿔주는 역할
 # - 실제 DB에서 해당 Task가 존재하는지 확인한 뒤 수정 진행
 # ------------------------------------------------------------
-@router.put("/task/{task_id}", response_model=task_schema.TaskCreateResponse)
+@router.put("/tasks/{task_id}", response_model=task_schema.TaskCreateResponse)
 # - task_id: URL 경로에 포함된 숫자 (수정 대상 할 일 번호)
 # - task_body: 수정할 내용을 담은 요청 본문 (title)
 # - db: FastAPI가 get_db() 함수를 통해 자동으로 주입하는 DB 세션 객체
@@ -123,7 +124,7 @@ async def update_task(
 # - 실제 DB에서 해당 Task가 존재하는지 확인한 뒤 삭제 진행
 # - 삭제 성공시 별도의 응답 본문 없이 204 상태 코드(No Content)를 반환함
 # ------------------------------------------------------------
-@router.delete("/task/{task_id}", response_model=None)
+@router.delete("/tasks/{task_id}", response_model=None)
 # - task_id: 삭제할 할 일의 번호
 # - response_model: 별도 응답 데이터를 보내지 않겠다는 뜻 (204 응답에 적합)
 async def delete_task(task_id: int, db: AsyncSession = Depends(get_db)):

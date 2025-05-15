@@ -61,7 +61,7 @@ async def mark_task_as_done(task_id: int, db: AsyncSession = Depends(get_db)):
 # - 요청 주소: /tasks/3/done
 #   (3번 할 일을 완료 취소한다는 의미)
 # ------------------------------------------------------------------------
-@router.delete("/task/{task_id}/done}", response_model=None)
+@router.delete("/tasks/{task_id}/done", response_model=None)
 async def remove_task_as_done(task_id: int, db: AsyncSession = Depends(get_db)):
     # 먼저 완료 상태인지 확인합니다
     done = await done_crud.get_done(db, task_id=task_id)
