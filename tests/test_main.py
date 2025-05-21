@@ -64,7 +64,7 @@ async def async_client() -> AsyncGenerator[AsyncClient, None]:
         await conn.run_sync(Base.metadata.create_all)  # 필요한 테이블 생성
 
     # --------------------------------------------------------------------------
-    # 3. get)db() 함수를 테스트용 DB와 연결되도록 override
+    # 3. get_db() 함수를 테스트용 DB와 연결되도록 override
     # - 실제 앱에서 사용하는 DB 대신 테스트용 DB로 작동하게 만듦
     # --------------------------------------------------------------------------
     async def get_test_db():
@@ -148,7 +148,7 @@ async def test_done_flag(async_client):
     response = await async_client.put("/tasks/1/done")
     assert (
         response.status_code == status.HTTP_400_BAD_REQUEST
-    )  # 완료 처리 요청이 성공했는지 확인
+    )  # 중복 완료 요청 -> 잘못된 요청 처리 확인
 
     # --------------------------------------------------------------------------
     # [4] 완료 처리된 작업을 완료 해제 (DELETE 요청)
@@ -167,4 +167,31 @@ async def test_done_flag(async_client):
     response = await async_client.delete("/tasks/1/done")
     assert (
         response.status_code == status.HTTP_404_NOT_FOUND
-    )  # 완료 처리 요청이 성공했는지 확인
+    )  # 존재하지 않는 상태를 다시 요청 -> 실패 응답 확인
+
+
+# ------------------------------------------------------------------------------
+# [테스트 함수] 마감일(due_date)에 포함된 할 일 생성 테스트
+# - 사용자가 title과 함께 due_date를 보낼 수 있는지 확인
+# - 예: {"title": "테스트 작업", "due_date": "2024-12-01"}
+# ------------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_due_date(async_client):
+    # --------------------------------------------------------------------------
+    # 1. POST 요청을 보냄
+    # - /tasks 주소에 JSON 데이터로 할 일을 하나 추가함
+    # - title은 정상적으로 입력하고,
+    #   due_date에는 존재하지 않는 날짜(12월 32일)를 넣어 테스트합니다.
+    # --------------------------------------------------------------------------
+    response = await async_client.post(
+        "/tasks",
+        json={"title": "테스트 작업", "due_date": "2024-12-32"},  # <- 잘못된 날짜
+    )
+
+    # --------------------------------------------------------------------------
+    # 2. 응답 상태 코드 확인
+    # - 날짜 형식이 잘못되었으므로 422 Unprocessable Entity를 반환해야 합니다.
+    # - Pydantic이 유효하지 않은 날짜를 감지하고 요청을 거부하게 됩니다.
+    # --------------------------------------------------------------------------
+    print(response.content)
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
